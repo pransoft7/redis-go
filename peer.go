@@ -61,18 +61,9 @@ func (p *Peer) readLoop() error {
 					key: v.Array()[1].Bytes(),
 				}
 
-			case CommandHELLO:
-				cmd = HelloCommand {
-					value: v.Array()[1].String(),
-				}
-
-			case CommandClient:
-				cmd = ClientCommand {
-					value: v.Array()[1].String(),
-				}
-
 			default:
-				fmt.Println("Command not found: ", v.Array())
+				fmt.Println("Command not found: ", rawCMD)
+
 			}
 
 			p.msgCh <- Message{
@@ -83,4 +74,3 @@ func (p *Peer) readLoop() error {
 	}
 	return nil
 }
-

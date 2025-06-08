@@ -4,44 +4,58 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"redis-go/client"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 )
 
-func TestOfficialRedisClient(t *testing.T) {
-	listenAddr := ":5001"
-	server := NewServer(Config{
-		ListenAddr: listenAddr,
-	})
+func TestServerWithMultiClients(t *testing.T) {
+	server := NewServer(Config{})
 	go func() {
 		log.Fatal(server.Start())
 	}()
-	time.Sleep(time.Millisecond * 400)
+	
+	nClients := 10
+	wg := sync.WaitGroup{}
+	wg.Add(nClients)
+	for i := 0; i < nClients; i++ {
+		go func(it int) {
+			defer wg.Done()
+			c, err := client.New("localhost:5432")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer c.Close()
+			key := fmt.Sprintf("client_foo_%d", i)
+			value := fmt.Sprintf("client_bar_%d", i)
+		
+			if err := c.Set(context.Background(), key, value); err != nil {
+				log.Fatal(err)
+			}
+	
+			val, err := c.Get(context.Background(), key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("client %d got this val back => %s\n", i, val)
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("localhost%s", ":5001"),
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+		}(i)
+	}
+	wg.Wait()
+	time.Sleep(time.Second) // give time to close the connections before terminating
 
-	testCases := map[string]string{
-		"chevy":  "camaro",
-		"porsche": "911",
-		"honda": "s2000",
-		"mazda": "miata",
+	if len(server.peers) != 0 {
+		t.Fatalf("expected 0 peers but got %d", len(server.peers))
 	}
-	for key, val := range testCases {
-		if err := rdb.Set(context.Background(), key, val, 0).Err(); err != nil {
-			t.Fatal(err)
-		}
-		newVal, err := rdb.Get(context.Background(), key).Result()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if newVal != val {
-			t.Fatalf("expected %s but got %s", val, newVal)
-		}
+}
+
+func TestFooBar(t *testing.T) {
+	in := map[string]string {
+		"first": "1",
+		"second": "2",
 	}
+	out := writeRespMap(in)
+	fmt.Println(out)
 }
