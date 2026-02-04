@@ -10,7 +10,6 @@ import (
 )
 
 type Command interface {
-	
 }
 
 type SetCommand struct {
@@ -26,8 +25,8 @@ type HelloCommand struct {
 }
 
 const (
-	CommandSET = "SET"
-	CommandGET = "GET"
+	CommandSET   = "SET"
+	CommandGET   = "GET"
 	CommandHELLO = "hello"
 )
 
@@ -52,7 +51,7 @@ func parseCommand(raw string) (Command, error) {
 					if len(v.Array()) != 3 {
 						return nil, fmt.Errorf("invalid no of vars for SET command")
 					}
-					cmd := SetCommand {
+					cmd := SetCommand{
 						key: v.Array()[1].Bytes(),
 						val: v.Array()[2].Bytes(),
 					}
@@ -62,7 +61,7 @@ func parseCommand(raw string) (Command, error) {
 					if len(v.Array()) != 2 {
 						return nil, fmt.Errorf("invalid no of vars for SET command")
 					}
-					cmd := GetCommand {
+					cmd := GetCommand{
 						key: v.Array()[1].Bytes(),
 					}
 					return cmd, nil
@@ -75,11 +74,10 @@ func parseCommand(raw string) (Command, error) {
 	return nil, fmt.Errorf("invalid or unknown command: %s", raw)
 }
 
-
 // To handle hello command from official redis client
 // According to RESP3 Maps Protocol
 func writeRespMap(m map[string]string) []byte {
-	var buf *bytes.Buffer
+	buf := &bytes.Buffer{}
 	rw := resp.NewWriter(buf)
 	rw.WriteString("OK")
 	buf.WriteString("%" + fmt.Sprintf("%d\r\n", len(m)))

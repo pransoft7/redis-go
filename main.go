@@ -15,7 +15,7 @@ type Config struct {
 }
 
 type Message struct {
-	cmd Command
+	cmd  Command
 	peer *Peer
 }
 
@@ -28,7 +28,6 @@ type Server struct {
 	quitCh    chan struct{}
 	msgCh     chan Message
 
-	//
 	kv *KV
 }
 
@@ -62,7 +61,7 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) handleMessage(msg Message) error {
-	
+
 	// v refers to the command interface
 	switch v := msg.cmd.(type) {
 	case SetCommand:
